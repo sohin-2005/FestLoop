@@ -16,7 +16,6 @@ public function up(): void
     Schema::create('events', function (Blueprint $table) {
         $table->id();
         $table->string('title');
-        $table->string('category'); // arts, sports, jam...
         $table->text('description')->nullable();
         $table->dateTime('starts_at');
         $table->string('venue');
@@ -25,6 +24,15 @@ public function up(): void
         $table->boolean('is_published')->default(true);
         $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
         $table->timestamps();
+        $table->string('banner_image')->nullable();
+        $table->string('category')->nullable();
+        $table->text('venue_details')->nullable();
+        $table->integer('max_participants')->nullable();
+        $table->boolean('requires_approval')->default(false);
+        $table->string('organizer')->nullable();
+        $table->string('contact_email')->nullable();
+        $table->string('contact_phone')->nullable();
+        $table->text('rules')->nullable();
     });
 }
 

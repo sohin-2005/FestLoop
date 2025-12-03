@@ -10,10 +10,10 @@ return new class extends Migration
     {
         Schema::table('events', function (Blueprint $table) {
             $table->string('banner_image')->nullable();
-            $table->string('category')->nullable();
+            // 'category' already exists on the original create_events_table migration
             $table->text('venue_details')->nullable();
             $table->integer('max_participants')->nullable();
-            $table->dateTime('registration_deadline')->nullable();
+            // 'registration_deadline' already exists on the original create_events_table migration
             $table->boolean('requires_approval')->default(false);
             $table->string('organizer')->nullable();
             $table->string('contact_email')->nullable();
@@ -27,10 +27,8 @@ return new class extends Migration
         Schema::table('events', function (Blueprint $table) {
             $table->dropColumn([
                 'banner_image',
-                'category',
                 'venue_details',
                 'max_participants',
-                'registration_deadline',
                 'requires_approval',
                 'organizer',
                 'contact_email',

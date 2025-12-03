@@ -36,9 +36,9 @@
                                 Search Events
                             </label>
                             <div class="relative">
-                                <input type="text" 
-                                       name="search" 
-                                       id="search" 
+                                <input type="text"
+                                       name="search"
+                                       id="search"
                                        value="{{ request('search') }}"
                                        placeholder="Search by name, description..."
                                        class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -53,7 +53,7 @@
                             <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Category
                             </label>
-                            <select name="category" 
+                            <select name="category"
                                     id="category"
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">All Categories</option>
@@ -73,7 +73,7 @@
                             <label for="time" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Time Period
                             </label>
-                            <select name="time" 
+                            <select name="time"
                                     id="time"
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">All Events</option>
@@ -106,12 +106,15 @@
                         </svg>
                         <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">No events found</h3>
                         <p class="text-gray-600 dark:text-gray-400 mb-6">Try adjusting your filters or search terms</p>
-                        @if (auth()->user()->role === 'coordinator')
-                            <a href="{{ route('events.create') }}"
-                               class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
-                                Create Your First Event
-                            </a>
-                        @endif
+
+                        @auth
+                            @if (auth()->user()->role === 'coordinator')
+                                <a href="{{ route('events.create') }}"
+                                   class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+                                    Create Your First Event
+                                </a>
+                            @endif
+                        @endauth
                     </div>
                 </div>
             @else
@@ -148,13 +151,13 @@
                             $isUpcoming = $event->start_time > $now;
                             $isPast = $event->end_time && $event->end_time < $now;
                             $isOngoing = !$isUpcoming && !$isPast;
-                            
+
                             $statusColor = $isOngoing ? 'blue' : ($isUpcoming ? 'green' : 'gray');
                             $statusText = $isOngoing ? 'Ongoing' : ($isUpcoming ? 'Upcoming' : 'Past');
                         @endphp
 
                         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden group relative">
-                            
+
                             {{-- Status Badge --}}
                             <div class="absolute top-4 left-4 z-10">
                                 <span class="px-3 py-1 bg-{{ $statusColor }}-100 dark:bg-{{ $statusColor }}-900/30 text-{{ $statusColor }}-700 dark:text-{{ $statusColor }}-300 text-xs font-bold rounded-full shadow-lg">
@@ -163,38 +166,33 @@
                             </div>
 
                             {{-- Event Banner --}}
-                            {{-- Event Banner --}}
-<div class="h-48 bg-gradient-to-br from-blue-500 to-purple-600 relative overflow-hidden">
-    @if ($event->banner_image)
-        <img
-            src="{{ asset('storage/' . $event->banner_image) }}"
-            alt="{{ $event->name }}"
-            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-        >
-    @else
-        {{-- Optional placeholder if no image --}}
-        <div class="w-full h-full flex items-center justify-center text-white text-lg font-semibold">
-            {{ \Illuminate\Support\Str::limit($event->name, 20) }}
-        </div>
-    @endif
+                            <div class="h-48 bg-gradient-to-br from-blue-500 to-purple-600 relative overflow-hidden">
+                                @if ($event->banner_image)
+                                    <img
+                                        src="{{ asset('storage/' . $event->banner_image) }}"
+                                        alt="{{ $event->name }}"
+                                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center text-white text-lg font-semibold">
+                                        {{ \Illuminate\Support\Str::limit($event->name, 20) }}
+                                    </div>
+                                @endif
 
-    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
+                                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
 
-    {{-- Category Badge --}}
-    <div class="absolute bottom-4 right-4">
-        <span class="px-3 py-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-900 dark:text-white text-xs font-semibold rounded-lg">
-            {{ ucfirst($event->category ?? 'Event') }}
-        </span>
-    </div>
-</div>
+                                <div class="absolute bottom-4 right-4">
+                                    <span class="px-3 py-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-900 dark:text-white text-xs font-semibold rounded-lg">
+                                        {{ ucfirst($event->category ?? 'Event') }}
+                                    </span>
+                                </div>
+                            </div>
 
-                            
                             {{-- Event Content --}}
                             <div class="p-6">
                                 <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                     {{ $event->name }}
                                 </h3>
-                                
+
                                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                                     {{ $event->description }}
                                 </p>
@@ -213,63 +211,54 @@
                                         </svg>
                                         <span class="line-clamp-1">{{ $event->location }}</span>
                                     </div>
-                                    @if($event->organizer)
-                                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                        </svg>
-                                        <span class="line-clamp-1">{{ $event->organizer }}</span>
-                                    </div>
+                                    @if ($event->organizer)
+                                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                            <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                            </svg>
+                                            <span class="line-clamp-1">{{ $event->organizer }}</span>
+                                        </div>
                                     @endif
                                 </div>
 
                                 {{-- Registration Info --}}
-                                @if($event->max_participants)
-                                <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                    <div class="flex items-center justify-between text-sm mb-1">
-                                        <span class="text-gray-600 dark:text-gray-400">Registrations</span>
-                                        <span class="font-semibold text-gray-900 dark:text-white">
-                                            {{ $event->registrations_count ?? 0 }} / {{ $event->max_participants }}
-                                        </span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
-                                        <div class="bg-blue-600 h-1.5 rounded-full" 
-                                             style="width: {{ min(100, (($event->registrations_count ?? 0) / $event->max_participants) * 100) }}%">
+                                @if ($event->max_participants)
+                                    <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                        <div class="flex items-center justify-between text-sm mb-1">
+                                            <span class="text-gray-600 dark:text-gray-400">Registrations</span>
+                                            <span class="font-semibold text-gray-900 dark:text-white">
+                                                {{ $event->registrations_count ?? 0 }} / {{ $event->max_participants }}
+                                            </span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
+                                            <div class="bg-blue-600 h-1.5 rounded-full"
+                                                 style="width: {{ min(100, (($event->registrations_count ?? 0) / $event->max_participants) * 100) }}%">
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
                                 @endif
 
+                                {{-- Actions --}}
                                 <div class="flex gap-2">
-                                <a href="{{ route('events.show', $event) }}"
-   class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors duration-200">
-    View Details
-</a>
+                                    <a href="{{ route('events.show', $event) }}"
+                                       class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors duration-200">
+                                        View Details
+                                    </a>
 
-@auth
-    @if (auth()->user()->role === 'student' && !$isPast)
-        <form method="POST"
-              action="{{ route('events.register', $event) }}">
-            @csrf
-            <button type="submit"
-                    class="inline-flex items-center justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors duration-200">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                </svg>
-            </button>
-        </form>
-    @endif
-@endauth
-
-                                    @if (auth()->user()->role === 'student' && !$isPast)
-                                        <a href="{{ route('events.register', $event) }}"
-                                           class="inline-flex items-center justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors duration-200">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                                            </svg>
-                                        </a>
-                                    @endif
+                                    @auth
+                                        @if (auth()->user()->role === 'student' && !$isPast)
+                                            <form method="POST" action="{{ route('events.register', $event) }}">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="inline-flex items-center justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors duration-200">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endauth
                                 </div>
                             </div>
                         </div>

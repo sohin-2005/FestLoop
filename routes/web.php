@@ -77,6 +77,7 @@ Route::middleware('auth:coordinator')->prefix('coordinator')->name('coordinator.
 |--------------------------------------------------------------------------
 */
 Route::get('/', [EventController::class, 'index'])->name('events.index');
+Route::get('/events/search', [EventController::class, 'searchEvents'])->name('events.search');
 Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
 
 

@@ -157,7 +157,7 @@
                                     </p>
                                     <div class="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                         <div class="bg-purple-600 h-2 rounded-full" 
-                                             style="width: {{ min(100, (($event->registrations_count ?? 0) / $event->max_participants) * 100) }}%">
+                                             style="width: {{ min(100, (($event->registrations_count ?? 0) / $event->max_participants) * 100)}%;">
                                         </div>
                                     </div>
                                 </div>

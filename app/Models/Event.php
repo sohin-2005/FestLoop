@@ -25,6 +25,7 @@ class Event extends Model
         'contact_phone',
         'rules',
         'user_id',
+        'coordinator_id',
     ];
 
     protected $casts = [

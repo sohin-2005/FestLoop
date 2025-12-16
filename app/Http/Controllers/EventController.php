@@ -73,12 +73,23 @@ class EventController extends Controller
         return view('events.create');
     }
 
+    public function coordinatorCreate()
+    {
+        return view('coordinator.events.create');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Store Event (Coordinator Only)
     |--------------------------------------------------------------------------
     */
     public function store(Request $request)
+    {
+        // This method should not be used directly; use coordinatorStore() instead
+        abort(404);
+    }
+
+    public function coordinatorStore(Request $request)
     {
         $data = $request->validate([
             'name'                  => 'required|string|max:255',
@@ -162,6 +173,21 @@ class EventController extends Controller
 
     /*
     |--------------------------------------------------------------------------
+    | Coordinator Index (List Coordinator's Events)
+    |--------------------------------------------------------------------------
+    */
+    public function coordinatorIndex()
+    {
+        $events = Event::where('coordinator_id', auth('coordinator')->id())
+            ->withCount('registrations')
+            ->orderBy('start_time', 'desc')
+            ->get();
+
+        return view('coordinator.events.index', compact('events'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Coordinator Edit Event
     |--------------------------------------------------------------------------
     */
@@ -172,6 +198,15 @@ class EventController extends Controller
         }
 
         return view('events.edit', compact('event'));
+    }
+
+    public function coordinatorEdit(Event $event)
+    {
+        if ($event->coordinator_id !== auth('coordinator')->id()) {
+            abort(403);
+        }
+
+        return view('coordinator.events.edit', compact('event'));
     }
 
     /*
@@ -216,6 +251,42 @@ class EventController extends Controller
             ->with('success', 'Event updated successfully!');
     }
 
+    public function coordinatorUpdate(Request $request, Event $event)
+    {
+        if ($event->coordinator_id !== auth('coordinator')->id()) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'name'                  => 'required|string|max:255',
+            'description'           => 'required|string',
+            'location'              => 'required|string|max:255',
+            'start_time'            => 'required|date',
+            'end_time'              => 'nullable|date|after_or_equal:start_time',
+
+            'banner_image'          => 'nullable|image|max:5120',
+            'category'              => 'nullable|string|max:100',
+            'venue_details'         => 'nullable|string',
+            'max_participants'      => 'nullable|integer|min:1',
+            'registration_deadline' => 'nullable|date|after_or_equal:now',
+            'requires_approval'     => 'nullable|boolean',
+            'contact_email'         => 'nullable|email|max:255',
+            'contact_phone'         => 'nullable|string|max:50',
+            'rules'                 => 'nullable|string',
+        ]);
+
+        $data['requires_approval'] = $request->has('requires_approval');
+
+        if ($request->hasFile('banner_image')) {
+            $data['banner_image'] = $request->file('banner_image')->store('event-banners', 'public');
+        }
+
+        $event->update($data);
+
+        return redirect()
+            ->route('coordinator.dashboard')
+            ->with('success', 'Event updated successfully!');
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -233,5 +304,75 @@ class EventController extends Controller
         return redirect()
             ->route('coordinator.dashboard')
             ->with('success', 'Event deleted.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | AJAX Search Events
+    |--------------------------------------------------------------------------
+    */
+    public function searchEvents(Request $request)
+    {
+        $search = $request->input('search', '');
+        $category = $request->input('category', '');
+        $time = $request->input('time', '');
+
+        $query = Event::query()->withCount('registrations');
+
+        // Search filter
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        // Category filter
+        if ($category) {
+            $query->where('category', $category);
+        }
+
+        // Time filter
+        if ($time) {
+            $now = now();
+
+            if ($time === 'upcoming') {
+                $query->where('start_time', '>', $now);
+            } elseif ($time === 'ongoing') {
+                $query->where('start_time', '<=', $now)
+                      ->where(function ($q) use ($now) {
+                          $q->whereNull('end_time')
+                            ->orWhere('end_time', '>=', $now);
+                      });
+            } elseif ($time === 'past') {
+                $query->where(function ($q) use ($now) {
+                    $q->whereNotNull('end_time')->where('end_time', '<', $now)
+                      ->orWhere(function ($q2) use ($now) {
+                          $q2->whereNull('end_time')->where('start_time', '<', $now);
+                      });
+                });
+            }
+        }
+
+        $events = $query->orderBy('start_time', 'asc')->get();
+
+        return response()->json([
+            'success' => true,
+            'events' => $events->map(function ($event) {
+                return [
+                    'id' => $event->id,
+                    'name' => $event->name,
+                    'description' => substr($event->description, 0, 100) . '...',
+                    'location' => $event->location,
+                    'category' => $event->category,
+                    'start_time' => $event->start_time->format('M d, Y h:i A'),
+                    'start_time_short' => $event->start_time->format('M d, Y'),
+                    'banner_image' => $event->banner_image ? 'storage/' . $event->banner_image : null,
+                    'registrations_count' => $event->registrations_count,
+                ];
+            }),
+            'total' => $events->count(),
+        ]);
     }
 }

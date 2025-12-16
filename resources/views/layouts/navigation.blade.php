@@ -7,7 +7,7 @@
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
                         {{-- your logo component or image --}}
-                        <img src="{{ asset('images/festloop-logo.png') }}"
+                        <img src="{{ asset('images/logo.png') }}"
                              alt="FestLoop" class="h-9 w-auto">
                     </a>
                 </div>
@@ -26,6 +26,12 @@
 
             <!-- Right side: User / Auth links -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+
+            <button id="theme-toggle" title="Toggle theme"
+      class="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition mr-4">
+    <span id="icon-sun" class="hidden">☀️</span>
+    <span id="icon-moon" class="hidden">🌙</span>
+  </button>
                 @auth
                     <!-- Settings Dropdown (only when logged in) -->
                     <x-dropdown align="right" width="48">

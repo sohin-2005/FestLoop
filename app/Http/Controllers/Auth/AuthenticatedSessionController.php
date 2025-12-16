@@ -28,6 +28,18 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        //coordinator login handling
+        if(request()->is('coordinator/login'))
+        {
+            if(auth()->user()->role !== 'coordinator')
+            {
+                auth()->logout();
+                return back()->withErrors([
+                    'email' => 'You are not authorized as a coordinator',
+                ]);
+        }
+        return redirect()->route('coordinator.dashboard');
+    }
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

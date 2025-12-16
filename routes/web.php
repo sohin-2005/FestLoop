@@ -2,45 +2,126 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\CoordinatorAuthController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Event;
 
-// Home page: list all events
+/*
+|--------------------------------------------------------------------------
+| Coordinator Guest Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest:coordinator')->group(function () {
+
+    Route::get('/coordinator/login', [CoordinatorAuthController::class, 'showLoginForm'])
+        ->name('coordinator.login');
+
+    Route::post('/coordinator/login', [CoordinatorAuthController::class, 'login']);
+
+    Route::get('/coordinator/register', [CoordinatorAuthController::class, 'showRegisterForm'])
+        ->name('coordinator.register');
+
+    Route::post('/coordinator/register', [CoordinatorAuthController::class, 'register']);
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Coordinator Protected Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:coordinator')->prefix('coordinator')->name('coordinator.')->group(function () {
+
+    // Dashboard
+    Route::get('/dashboard', function () {
+        $events = Event::where('coordinator_id', auth('coordinator')->id())->get();
+        return view('coordinator.dashboard', compact('events'));
+    })->name('dashboard');
+
+    // Logout
+    Route::post('/logout', [CoordinatorAuthController::class, 'logout'])
+        ->name('logout');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Coordinator Event Management Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('events')->name('events.')->group(function () {
+
+        Route::get('/', [EventController::class, 'coordinatorIndex'])
+            ->name('index');
+
+        Route::get('/create', [EventController::class, 'coordinatorCreate'])
+            ->name('create');
+
+        Route::post('/', [EventController::class, 'coordinatorStore'])
+            ->name('store');
+
+        Route::get('/{event}/edit', [EventController::class, 'coordinatorEdit'])
+            ->name('edit');
+
+        Route::patch('/{event}', [EventController::class, 'coordinatorUpdate'])
+            ->name('update');
+
+        Route::delete('/{event}', [EventController::class, 'coordinatorDestroy'])
+            ->name('destroy');
+    });
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Public Routes (for both Guests & Students)
+|--------------------------------------------------------------------------
+*/
 Route::get('/', [EventController::class, 'index'])->name('events.index');
+Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
 
-// Dashboard with stats
-Route::get('/dashboard', function () {
-    $totalEvents = Event::count();
-    $upcomingEventsCount = Event::where('start_time', '>=', now())->count();
 
-    $upcomingEvents = Event::where('start_time', '>=', now())
-        ->orderBy('start_time')
-        ->take(5)
-        ->get();
+/*
+|--------------------------------------------------------------------------
+| Student Auth Routes (Breeze)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified'])->group(function () {
 
-    return view('dashboard', [
-        'totalEvents'         => $totalEvents,
-        'upcomingEventsCount' => $upcomingEventsCount,
-        'upcomingEvents'      => $upcomingEvents,
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+    Route::get('/dashboard', function () {
 
-// Event routes (auth required)
-Route::middleware('auth')->group(function () {
-    Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
-    Route::post('/events', [EventController::class, 'store'])->name('events.store');
+        // If coordinator is logged in → redirect them away
+        if (Auth::guard('coordinator')->check()) {
+            return redirect()->route('coordinator.dashboard');
+        }
 
-    // 👇 ADD THIS ROUTE
+        $totalEvents = Event::count();
+        $upcomingEventsCount = Event::where('start_time', '>=', now())->count();
+        $upcomingEvents = Event::where('start_time', '>=', now())
+            ->orderBy('start_time')
+            ->take(5)
+            ->get();
+
+        return view('dashboard', compact(
+            'totalEvents',
+            'upcomingEventsCount',
+            'upcomingEvents'
+        ));
+    })->name('dashboard');
+
+    // Student event registration
     Route::post('/events/{event}/register', [EventController::class, 'register'])
         ->name('events.register');
 
-    // Profile routes
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // Student profile settings
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
 });
 
-// Show single event (public)
-Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

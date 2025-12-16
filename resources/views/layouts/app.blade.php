@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
+    <script>
+      (function () {
+        try {
+          const theme = localStorage.getItem('theme');
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+          else if (theme === 'light') document.documentElement.classList.remove('dark');
+        } catch (e) {}
+      })();
+    </script>
+    
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -32,5 +42,34 @@
                 {{ $slot }}
             </main>
         </div>
+        <!-- at the end of layout, before closing body -->
+<script>
+  // toggle logic — runs after DOM is built
+  (function () {
+    try {
+      const btn = document.getElementById('theme-toggle');
+      const sun = document.getElementById('icon-sun');
+      const moon = document.getElementById('icon-moon');
+
+      function updateIcons() {
+        const isDark = document.documentElement.classList.contains('dark');
+        if (sun && moon) {
+          if (isDark) { moon.style.display = 'inline'; sun.style.display = 'none'; }
+          else { sun.style.display = 'inline'; moon.style.display = 'none'; }
+        }
+      }
+
+      if (!btn) return;
+      updateIcons();
+
+      btn.addEventListener('click', function () {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateIcons();
+      });
+    } catch(e) { console.error(e); }
+  })();
+</script>
+
     </body>
 </html>

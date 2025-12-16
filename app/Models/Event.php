@@ -21,17 +21,17 @@ class Event extends Model
         'max_participants',
         'registration_deadline',
         'requires_approval',
-        'organizer',
         'contact_email',
         'contact_phone',
         'rules',
+        'user_id',
     ];
 
     protected $casts = [
-        'start_time'           => 'datetime',
-        'end_time'             => 'datetime',
-        'registration_deadline'=> 'datetime',
-        'requires_approval'    => 'boolean',
+        'start_time'            => 'datetime',
+        'end_time'              => 'datetime',
+        'registration_deadline' => 'datetime',
+        'requires_approval'     => 'boolean',
     ];
 
     public function registrations()
@@ -42,5 +42,10 @@ class Event extends Model
     public function participants()
     {
         return $this->belongsToMany(User::class, 'registrations');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

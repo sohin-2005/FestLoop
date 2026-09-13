@@ -1,137 +1,92 @@
 <x-app-layout>
-    <x-slot name="header">
-        @php
-            $isCoordinator = Auth::guard('coordinator')->check();
-            $user = $isCoordinator ? Auth::guard('coordinator')->user() : Auth::user();
-        @endphp
-
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="font-bold text-2xl text-gray-900 dark:text-white">
-                    FestLoop Dashboard
-                </h2>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    {{ $isCoordinator ? "Manage your events" : "Discover college events" }}
-                </p>
-            </div>
-
-            {{-- Coordinator Only: Create Event --}}
-            @if ($isCoordinator)
-                <a href="{{ route('events.create') }}"
-                   class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 
-                   rounded-xl font-semibold text-sm text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 
-                   transition-all duration-200">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Create New Event
-                </a>
-            @endif
+    <section class="border-b-2 border-ink bg-cream">
+        <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <p class="eyebrow">Welcome back</p>
+            <h1 class="headline text-3xl text-ink sm:text-4xl">Hey, {{ explode(' ', auth()->user()->name)[0] }} 👋</h1>
         </div>
-    </x-slot>
+    </section>
 
-    <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-10 lg:grid-cols-3">
+            <div class="space-y-10 lg:col-span-2">
+                {{-- registrations --}}
+                <div>
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-display text-2xl text-ink">Your upcoming events</h2>
+                        <a href="{{ route('events.index') }}" class="btn-quiet text-sm">Browse more →</a>
+                    </div>
 
-            {{-- Welcome Banner --}}
-            <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-xl overflow-hidden">
-                <div class="p-8 md:p-10">
-                    <div class="flex flex-col md:flex-row items-center justify-between">
-                        <div class="text-white mb-6 md:mb-0">
-                            <h3 class="text-3xl font-bold mb-2">
-                                Welcome back, {{ $user->name }}! 👋
-                            </h3>
-                            <p class="text-blue-100 text-lg">
-                                {{ $isCoordinator ? 'Manage your events and engage with students' : 'Explore exciting events happening on campus' }}
-                            </p>
+                    @if ($upcomingRegistrations->isEmpty())
+                        <div class="panel-soft mt-4 py-12 text-center">
+                            <p class="text-ink-soft">You haven't registered for anything yet.</p>
+                            <a href="{{ route('events.index') }}" class="btn-accent btn-sm mt-3 inline-flex">Find an event</a>
                         </div>
-
-                        <div class="flex-shrink-0">
-                            <div class="w-32 h-32 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                                <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                            </div>
+                    @else
+                        <div class="mt-4 space-y-3">
+                            @foreach ($upcomingRegistrations as $event)
+                                <a href="{{ route('events.show', $event) }}" class="ticket flex-row items-center">
+                                    <div class="flex flex-1 items-center gap-4 p-4">
+                                        <div class="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-ink leading-none">
+                                            <span class="font-mono text-[9px] uppercase text-tangerine">{{ $event->start_time->format('M') }}</span>
+                                            <span class="font-display text-xl text-ink">{{ $event->start_time->format('d') }}</span>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate font-display text-lg text-ink">{{ $event->name }}</p>
+                                            <p class="truncate text-xs text-ink-soft">{{ $event->club?->name }} · {{ $event->location }}</p>
+                                        </div>
+                                        <span class="chip !border-ink/15 shrink-0">{{ \App\Models\Registration::LABELS[$event->pivot->status] ?? ucfirst($event->pivot->status) }}</span>
+                                    </div>
+                                </a>
+                            @endforeach
                         </div>
+                    @endif
+                </div>
+
+                {{-- for you --}}
+                <div>
+                    <h2 class="font-display text-2xl text-ink">
+                        {{ $followedClubs->isNotEmpty() ? 'From clubs you follow' : 'Happening soon' }}
+                    </h2>
+                    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        @forelse ($forYouEvents as $event)
+                            <a href="{{ route('events.show', $event) }}" class="panel-soft p-4 hover:border-ink">
+                                <p class="eyebrow">{{ $event->start_time->format('D, M j') }}</p>
+                                <p class="mt-1 font-semibold text-ink">{{ $event->name }}</p>
+                                <p class="text-xs text-ink-soft">{{ $event->club?->name }}</p>
+                            </a>
+                        @empty
+                            <p class="text-sm text-ink-soft">No upcoming events right now — check back soon.</p>
+                        @endforelse
                     </div>
                 </div>
             </div>
 
-            {{-- Stats Cards --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-                    <p class="text-sm text-gray-600">Total Events</p>
-                    <h3 class="text-4xl font-bold text-gray-900 dark:text-white">{{ $totalEvents }}</h3>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-                    <p class="text-sm text-gray-600">Upcoming Events</p>
-                    <h3 class="text-4xl font-bold text-gray-900 dark:text-white">{{ $upcomingEventsCount }}</h3>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-                    <p class="text-sm text-gray-600">Role</p>
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">
-                        {{ $isCoordinator ? 'Coordinator' : 'Student' }}
-                    </h3>
-                </div>
-            </div>
-
-            {{-- Section Header --}}
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Upcoming Events</h3>
-                </div>
-
-                <a href="{{ route('events.index') }}"
-                   class="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-white">
-                    View All Events →
-                </a>
-            </div>
-
-            {{-- Events Grid --}}
-            @if ($upcomingEvents->isEmpty())
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-12 text-center">
-                    <h3 class="text-xl font-semibold">No upcoming events</h3>
-                    <p class="text-gray-600">Check again soon!</p>
-                </div>
-            @else
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach ($upcomingEvents as $event)
-                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
-                            <div class="h-48 bg-gray-200 dark:bg-gray-700">
-
-                                {{-- Banner --}}
-                                @if($event->banner_image)
-                                    <img src="{{ asset('storage/' . $event->banner_image) }}"
-                                         class="w-full h-full object-cover">
-                                @endif
-                            </div>
-
-                            <div class="p-6">
-                                <h4 class="text-xl font-bold">{{ $event->name }}</h4>
-                                <p class="text-sm text-gray-600">📅 {{ $event->start_time->format('M d, Y') }}</p>
-                                <p class="text-sm text-gray-600">📍 {{ $event->location }}</p>
-
-                                <div class="flex gap-2 mt-4">
-                                    <a href="{{ route('events.show', $event) }}"
-                                       class="flex-1 px-4 py-2 bg-blue-600 text-white rounded">
-                                        View
+            {{-- followed clubs sidebar --}}
+            <div>
+                <div class="panel p-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="eyebrow">Clubs you follow</h3>
+                        <a href="{{ route('clubs.index') }}" class="text-xs font-semibold text-tangerine hover:underline">+ Discover</a>
+                    </div>
+                    @if ($followedClubs->isEmpty())
+                        <p class="mt-3 text-sm text-ink-soft">Follow a club to get notified when they post events.</p>
+                    @else
+                        <ul class="mt-3 space-y-3">
+                            @foreach ($followedClubs as $club)
+                                <li>
+                                    <a href="{{ route('clubs.show', $club) }}" class="flex items-center gap-3 hover:text-tangerine">
+                                        <span class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-cream font-display text-xs" style="color: {{ $club->accent_color }}">{{ $club->initials }}</span>
+                                        <span class="min-w-0 flex-1">
+                                            <span class="block truncate text-sm font-semibold text-ink">{{ $club->name }}</span>
+                                            <span class="block font-mono text-[10px] text-ink-mute">{{ $club->events_count }} events</span>
+                                        </span>
                                     </a>
-
-                                    @if (!$isCoordinator)
-                                        <a href="{{ route('events.register', $event) }}"
-                                           class="px-4 py-2 bg-green-600 text-white rounded">
-                                            Register
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
                 </div>
-            @endif
-
+            </div>
         </div>
     </div>
 </x-app-layout>

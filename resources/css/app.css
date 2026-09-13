@@ -1,3 +1,150 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    html {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        @apply bg-paper text-ink font-sans antialiased;
+        /* faint paper grain so large empty areas don't look flat */
+        background-image: radial-gradient(rgba(23, 26, 61, 0.045) 1px, transparent 1px);
+        background-size: 22px 22px;
+    }
+
+    ::selection {
+        @apply bg-butter text-ink;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    /* ---------- type ---------- */
+    .eyebrow {
+        @apply font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft;
+    }
+
+    .headline {
+        @apply font-display uppercase leading-[0.92] tracking-[0.01em];
+    }
+
+    .squiggle {
+        text-decoration: underline;
+        text-decoration-style: wavy;
+        text-decoration-color: theme('colors.tangerine');
+        text-decoration-thickness: 2px;
+        text-underline-offset: 6px;
+    }
+
+    /* ---------- buttons ---------- */
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-ink px-5 py-2.5 text-sm font-semibold transition
+            duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-tangerine focus-visible:ring-offset-2 focus-visible:ring-offset-paper
+            disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .btn-ink {
+        @apply btn bg-ink text-cream hover:-translate-y-0.5 hover:shadow-hard-sm active:translate-y-0 active:shadow-none;
+        --tw-shadow-color: theme('colors.tangerine');
+        box-shadow: none;
+    }
+    .btn-ink:hover {
+        box-shadow: 3px 3px 0 0 theme('colors.tangerine');
+    }
+
+    .btn-accent {
+        @apply btn bg-tangerine text-ink hover:-translate-y-0.5 hover:shadow-hard-sm active:translate-y-0 active:shadow-none;
+    }
+
+    .btn-ghost {
+        @apply btn bg-transparent text-ink hover:bg-ink hover:text-cream;
+    }
+
+    .btn-quiet {
+        @apply inline-flex items-center gap-1.5 text-sm font-semibold text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-tangerine;
+    }
+
+    .btn-danger {
+        @apply btn border-red-700 bg-transparent text-red-700 hover:bg-red-700 hover:text-cream;
+    }
+
+    .btn-sm {
+        @apply px-3.5 py-1.5 text-xs;
+    }
+
+    /* ---------- surfaces ---------- */
+    .panel {
+        @apply rounded-2xl border-2 border-ink bg-cream;
+    }
+
+    .panel-soft {
+        @apply rounded-2xl border border-ink/15 bg-cream;
+    }
+
+    .chip {
+        @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-ink/25 bg-cream px-3 py-1 text-xs font-medium text-ink;
+    }
+
+    .chip-active {
+        @apply border-ink bg-ink text-cream;
+    }
+
+    .sticker {
+        @apply inline-flex items-center gap-1 rounded-sm border-2 border-ink px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider shadow-hard-sm;
+    }
+
+    /* ---------- forms ---------- */
+    .field-label {
+        @apply mb-1.5 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-soft;
+    }
+
+    .field {
+        @apply block w-full rounded-xl border-2 border-ink/15 bg-cream px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-mute
+            focus:border-ink focus:ring-0 focus:shadow-hard-sm;
+    }
+
+    .field-error {
+        @apply mt-1.5 text-sm text-red-700;
+    }
+
+    /* ---------- ticket card ---------- */
+    .ticket {
+        @apply relative flex flex-col overflow-hidden rounded-2xl border-2 border-ink bg-cream transition duration-200;
+    }
+    .ticket:hover {
+        transform: translate(-2px, -2px) rotate(-0.3deg);
+        box-shadow: 6px 6px 0 0 theme('colors.ink');
+    }
+
+    /* the perforated tear line between poster and stub */
+    .perforation {
+        @apply relative h-0 border-t-2 border-dashed border-ink/40;
+    }
+    .perforation::before,
+    .perforation::after {
+        content: '';
+        @apply absolute -top-[9px] h-4 w-4 rounded-full border-2 border-ink bg-paper;
+    }
+    .perforation::before {
+        left: -10px;
+    }
+    .perforation::after {
+        right: -10px;
+    }
+
+    .live-dot {
+        @apply inline-block h-2 w-2 rounded-full bg-red-600 animate-blink;
+    }
+
+    .scrollbar-none {
+        scrollbar-width: none;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+}

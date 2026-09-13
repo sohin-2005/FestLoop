@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,7 +12,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+        ]);
+
+        // Club coordinators use their own guard, so send them to their own login/dashboard.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('coordinator', 'coordinator/*')
+            ? route('coordinator.login')
+            : route('login'));
+
+        $middleware->redirectUsersTo(fn (Request $request) => $request->is('coordinator', 'coordinator/*')
+            ? route('coordinator.dashboard')
+            : route('dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

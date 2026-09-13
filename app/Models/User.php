@@ -21,7 +21,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',            // <— if you created this column in migration
+        'role',
+        'department',
+        'year_of_study',
+        'roll_number',
     ];
 
     /**
@@ -47,6 +50,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
     /**
      * A user can register for many events.
      */
@@ -61,14 +69,15 @@ class User extends Authenticatable
     public function registeredEvents()
     {
         return $this->belongsToMany(Event::class, 'registrations')
-                    ->withTimestamps();
+            ->withPivot('status')
+            ->withTimestamps();
     }
 
     /**
-     * Events created by this user (for coordinators).
+     * Clubs this student follows for updates.
      */
-    public function createdEvents()
+    public function followedClubs()
     {
-        return $this->hasMany(Event::class, 'created_by');
+        return $this->belongsToMany(Club::class, 'club_follows')->withTimestamps();
     }
 }

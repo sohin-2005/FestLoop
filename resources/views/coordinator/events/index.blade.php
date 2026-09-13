@@ -1,86 +1,42 @@
-<x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-bold text-2xl text-gray-900 dark:text-white">
-                My Events
-            </h2>
-            <a href="{{ route('coordinator.events.create') }}"
-               class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 transition">
-                + Create Event
-            </a>
+<x-coordinator-layout>
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="eyebrow">Manage</p>
+            <h1 class="headline text-3xl text-ink">Your events</h1>
         </div>
-    </x-slot>
-
-    <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @if($events->isEmpty())
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-8 text-center">
-                    <p class="text-gray-600 dark:text-gray-400 mb-4">
-                        You haven't created any events yet.
-                    </p>
-                    <a href="{{ route('coordinator.events.create') }}"
-                       class="inline-block px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 transition">
-                        Create Your First Event
-                    </a>
-                </div>
-            @else
-                <div class="grid grid-cols-1 gap-6">
-                    @foreach($events as $event)
-                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow hover:shadow-lg transition overflow-hidden">
-                            <div class="p-6">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-                                            {{ $event->name }}
-                                        </h3>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                            {{ $event->start_time?->format('d M Y, h:i A') }}
-                                        </p>
-                                    </div>
-                                    <span class="inline-block px-3 py-1 bg-brand/20 text-brand rounded-full text-sm font-medium">
-                                        {{ $event->registrations_count ?? 0 }} registered
-                                    </span>
-                                </div>
-
-                                <p class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-2">
-                                    {{ $event->description }}
-                                </p>
-
-                                <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
-                                    <div>
-                                        <span class="text-gray-600 dark:text-gray-400">Location:</span>
-                                        <p class="text-gray-900 dark:text-white font-medium">{{ $event->location }}</p>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-600 dark:text-gray-400">Category:</span>
-                                        <p class="text-gray-900 dark:text-white font-medium">{{ $event->category ?? 'N/A' }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                    <a href="{{ route('events.show', $event) }}"
-                                       class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition text-center text-sm font-medium">
-                                        View
-                                    </a>
-                                    <a href="{{ route('coordinator.events.edit', $event) }}"
-                                       class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center text-sm font-medium">
-                                        Edit
-                                    </a>
-                                    <form method="POST" action="{{ route('coordinator.events.destroy', $event) }}"
-                                          onsubmit="return confirm('Are you sure?')" class="flex-1">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
+        <a href="{{ route('coordinator.events.create') }}" class="btn-accent btn-sm">+ New event</a>
     </div>
-</x-app-layout>
+
+    @if ($events->isEmpty())
+        <div class="panel-soft mt-6 py-14 text-center">
+            <p class="text-ink-soft">No events yet.</p>
+            <a href="{{ route('coordinator.events.create') }}" class="btn-ink btn-sm mt-3 inline-flex">Create your first event</a>
+        </div>
+    @else
+        <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($events as $event)
+                <div class="panel flex flex-col overflow-hidden">
+                    <div class="relative h-28 bg-gradient-to-br from-tangerine via-plum to-sky">
+                        @if ($event->banner_url)<img src="{{ $event->banner_url }}" class="h-full w-full object-cover" alt="">@endif
+                        @if ($event->isOngoing())<span class="sticker absolute right-2 top-2 border-red-700 bg-red-600 text-cream">Live</span>@endif
+                    </div>
+                    <div class="flex-1 p-4">
+                        <p class="eyebrow">{{ $event->start_time->format('M d, Y · g:i A') }}</p>
+                        <p class="mt-1 font-display text-lg leading-tight text-ink">{{ $event->name }}</p>
+                        <p class="mt-1 text-xs text-ink-soft">{{ $event->location }}</p>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-ink/10 px-4 py-3 text-xs">
+                        <a href="{{ route('coordinator.events.registrations', $event) }}" class="font-semibold text-tangerine hover:underline">{{ $event->active_registrations_count }} registered</a>
+                        <div class="flex gap-3">
+                            <a href="{{ route('coordinator.events.edit', $event) }}" class="btn-quiet">Edit</a>
+                            <form method="POST" action="{{ route('coordinator.events.destroy', $event) }}" onsubmit="return confirm('Delete this event?')">
+                                @csrf @method('DELETE')
+                                <button class="btn-quiet text-red-700 decoration-red-700/30">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+</x-coordinator-layout>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Club;
 use App\Models\Event;
 use App\Models\Registration;
 use Illuminate\Http\Request;
@@ -16,115 +17,62 @@ class EventController extends Controller
     */
     public function index(Request $request)
     {
-        $query = Event::query()
-            ->withCount('registrations')
-            ->orderBy('start_time', 'asc');
+        $events = Event::query()
+            ->visible()
+            ->with('club')
+            ->withCount(['activeRegistrations'])
+            ->filter($request->only(['search', 'category', 'club', 'time']))
+            ->paginate(9)
+            ->withQueryString();
 
-        // Search
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('location', 'like', "%{$search}%");
-            });
-        }
+        $clubs = Club::approved()->orderBy('name')->get(['id', 'name', 'slug']);
+        $spotlight = Event::visible()->upcoming()->with('club')->orderBy('start_time')->first();
 
-        // Category filter
-        if ($category = $request->input('category')) {
-            $query->where('category', $category);
-        }
-
-        // Time filter
-        if ($time = $request->input('time')) {
-            $now = now();
-
-            if ($time === 'upcoming') {
-                $query->where('start_time', '>', $now);
-
-            } elseif ($time === 'ongoing') {
-                $query->where('start_time', '<=', $now)
-                      ->where(function ($q) use ($now) {
-                          $q->whereNull('end_time')
-                            ->orWhere('end_time', '>=', $now);
-                      });
-
-            } elseif ($time === 'past') {
-                $query->where(function ($q) use ($now) {
-                    $q->whereNotNull('end_time')->where('end_time', '<', $now)
-                      ->orWhere(function ($q2) use ($now) {
-                          $q2->whereNull('end_time')->where('start_time', '<', $now);
-                      });
-                });
-            }
-        }
-
-        $events = $query->paginate(9)->withQueryString();
-
-        return view('events.index', compact('events'));
+        return view('events.index', compact('events', 'clubs', 'spotlight'));
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Show Create Event Form (Coordinator Only)
+    | AJAX Search Events
     |--------------------------------------------------------------------------
     */
-    public function create()
+    public function searchEvents(Request $request)
     {
-        return view('events.create');
-    }
+        $events = Event::query()
+            ->visible()
+            ->with('club')
+            ->withCount('activeRegistrations')
+            ->filter($request->only(['search', 'category', 'club', 'time']))
+            ->limit(24)
+            ->get();
 
-    public function coordinatorCreate()
-    {
-        return view('coordinator.events.create');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Store Event (Coordinator Only)
-    |--------------------------------------------------------------------------
-    */
-    public function store(Request $request)
-    {
-        // This method should not be used directly; use coordinatorStore() instead
-        abort(404);
-    }
-
-    public function coordinatorStore(Request $request)
-    {
-        $data = $request->validate([
-            'name'                  => 'required|string|max:255',
-            'description'           => 'required|string',
-            'location'              => 'required|string|max:255',
-            'start_time'            => 'required|date',
-            'end_time'              => 'nullable|date|after_or_equal:start_time',
-
-            'banner_image'          => 'nullable|image|max:5120',
-            'category'              => 'nullable|string|max:100',
-            'venue_details'         => 'nullable|string',
-            'max_participants'      => 'nullable|integer|min:1',
-            'registration_deadline' => 'nullable|date',
-            'requires_approval'     => 'nullable|boolean',
-            'contact_email'         => 'nullable|email',
-            'contact_phone'         => 'nullable|string',
-            'rules'                 => 'nullable|string',
+        return response()->json([
+            'success' => true,
+            'total'   => $events->count(),
+            'events'  => $events->map(fn (Event $event) => [
+                'id'                  => $event->id,
+                'name'                => $event->name,
+                'excerpt'             => $event->excerpt,
+                'location'            => $event->location,
+                'category'            => $event->category,
+                'category_label'      => $event->category_label,
+                'mode_label'          => $event->mode_label,
+                'club_name'           => $event->club?->name,
+                'club_slug'           => $event->club?->slug,
+                'club_initials'       => $event->club?->initials,
+                'start_time'          => $event->start_time->format('M d, Y \a\t g:i A'),
+                'start_time_short'    => $event->start_time->format('M d'),
+                'start_month'         => $event->start_time->format('M'),
+                'start_day'           => $event->start_time->format('d'),
+                'banner_url'          => $event->banner_url,
+                'registrations_count' => $event->active_registrations_count,
+                'spots_left'          => $event->spotsLeft(),
+                'is_ongoing'          => $event->isOngoing(),
+                'is_past'             => $event->isPast(),
+                'url'                 => route('events.show', $event),
+            ]),
         ]);
-
-        // Assign event to the logged-in coordinator
-        $data['coordinator_id'] = auth('coordinator')->id();
-        $data['requires_approval'] = $request->has('requires_approval');
-
-        // Handle banner upload
-        if ($request->hasFile('banner_image')) {
-            $data['banner_image'] = $request->file('banner_image')->store('event-banners', 'public');
-        }
-
-        Event::create($data);
-
-        return redirect()
-            ->route('coordinator.dashboard')
-            ->with('success', 'Event created successfully!');
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -133,17 +81,21 @@ class EventController extends Controller
     */
     public function show(Event $event)
     {
-        $alreadyRegistered = false;
+        abort_unless($event->club && $event->club->isApproved(), 404);
 
-        if (Auth::check()) {
-            $alreadyRegistered = $event->registrations()
-                ->where('user_id', Auth::id())
-                ->exists();
-        }
+        $event->load('club');
+        $registration = $event->registrationFor(Auth::user());
 
-        return view('events.show', compact('event', 'alreadyRegistered'));
+        $relatedEvents = Event::visible()
+            ->where('id', '!=', $event->id)
+            ->where('club_id', $event->club_id)
+            ->upcoming()
+            ->orderBy('start_time')
+            ->take(3)
+            ->get();
+
+        return view('events.show', compact('event', 'registration', 'relatedEvents'));
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -154,225 +106,29 @@ class EventController extends Controller
     {
         $user = Auth::user();
 
-        if ($event->registration_deadline && now()->gt($event->registration_deadline)) {
-            return back()->with('error', 'Registration closed.');
+        if (! $event->registrationOpen()) {
+            return back()->with('error', 'Registration for this event is closed.');
         }
 
-        if ($event->max_participants && $event->registrations()->count() >= $event->max_participants) {
-            return back()->with('error', 'Event is full.');
+        if ($event->usesExternalRegistration()) {
+            return redirect($event->external_registration_url);
         }
 
-        Registration::firstOrCreate([
-            'user_id'  => $user->id,
-            'event_id' => $event->id,
-        ]);
+        $registration = $event->registerUser($user);
 
-        return back()->with('success', 'You are registered for this event!');
+        $message = match ($registration->status) {
+            Registration::WAITLISTED => "You're on the waitlist — we'll notify you if a spot opens up.",
+            Registration::PENDING    => 'Registration submitted — the club will review and confirm your spot.',
+            default                  => "You're registered! See you there.",
+        };
+
+        return back()->with('success', $message);
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Coordinator Index (List Coordinator's Events)
-    |--------------------------------------------------------------------------
-    */
-    public function coordinatorIndex()
+    public function cancelRegistration(Event $event)
     {
-        $events = Event::where('coordinator_id', auth('coordinator')->id())
-            ->withCount('registrations')
-            ->orderBy('start_time', 'desc')
-            ->get();
+        $event->cancelRegistration(Auth::user());
 
-        return view('coordinator.events.index', compact('events'));
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Coordinator Edit Event
-    |--------------------------------------------------------------------------
-    */
-    public function edit(Event $event)
-    {
-        if ($event->coordinator_id !== auth('coordinator')->id()) {
-            abort(403);
-        }
-
-        return view('events.edit', compact('event'));
-    }
-
-    public function coordinatorEdit(Event $event)
-    {
-        if ($event->coordinator_id !== auth('coordinator')->id()) {
-            abort(403);
-        }
-
-        return view('coordinator.events.edit', compact('event'));
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Coordinator Update Event
-    |--------------------------------------------------------------------------
-    */
-    public function update(Request $request, Event $event)
-    {
-        if ($event->coordinator_id !== auth('coordinator')->id()) {
-            abort(403);
-        }
-
-        $data = $request->validate([
-            'name'                  => 'required|string|max:255',
-            'description'           => 'required|string',
-            'location'              => 'required|string|max:255',
-            'start_time'            => 'required|date',
-            'end_time'              => 'nullable|date|after_or_equal:start_time',
-
-            'banner_image'          => 'nullable|image|max:5120',
-            'category'              => 'nullable|string|max:100',
-            'venue_details'         => 'nullable|string',
-            'max_participants'      => 'nullable|integer|min:1',
-            'registration_deadline' => 'nullable|date|after_or_equal:now',
-            'requires_approval'     => 'nullable|boolean',
-            'contact_email'         => 'nullable|email|max:255',
-            'contact_phone'         => 'nullable|string|max:50',
-            'rules'                 => 'nullable|string',
-        ]);
-
-        $data['requires_approval'] = $request->has('requires_approval');
-
-        if ($request->hasFile('banner_image')) {
-            $data['banner_image'] = $request->file('banner_image')->store('event-banners', 'public');
-        }
-
-        $event->update($data);
-
-        return redirect()
-            ->route('events.show', $event)
-            ->with('success', 'Event updated successfully!');
-    }
-
-    public function coordinatorUpdate(Request $request, Event $event)
-    {
-        if ($event->coordinator_id !== auth('coordinator')->id()) {
-            abort(403);
-        }
-
-        $data = $request->validate([
-            'name'                  => 'required|string|max:255',
-            'description'           => 'required|string',
-            'location'              => 'required|string|max:255',
-            'start_time'            => 'required|date',
-            'end_time'              => 'nullable|date|after_or_equal:start_time',
-
-            'banner_image'          => 'nullable|image|max:5120',
-            'category'              => 'nullable|string|max:100',
-            'venue_details'         => 'nullable|string',
-            'max_participants'      => 'nullable|integer|min:1',
-            'registration_deadline' => 'nullable|date|after_or_equal:now',
-            'requires_approval'     => 'nullable|boolean',
-            'contact_email'         => 'nullable|email|max:255',
-            'contact_phone'         => 'nullable|string|max:50',
-            'rules'                 => 'nullable|string',
-        ]);
-
-        $data['requires_approval'] = $request->has('requires_approval');
-
-        if ($request->hasFile('banner_image')) {
-            $data['banner_image'] = $request->file('banner_image')->store('event-banners', 'public');
-        }
-
-        $event->update($data);
-
-        return redirect()
-            ->route('coordinator.dashboard')
-            ->with('success', 'Event updated successfully!');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Coordinator Deletes Event
-    |--------------------------------------------------------------------------
-    */
-    public function destroy(Event $event)
-    {
-        if ($event->coordinator_id !== auth('coordinator')->id()) {
-            abort(403);
-        }
-
-        $event->delete();
-
-        return redirect()
-            ->route('coordinator.dashboard')
-            ->with('success', 'Event deleted.');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | AJAX Search Events
-    |--------------------------------------------------------------------------
-    */
-    public function searchEvents(Request $request)
-    {
-        $search = $request->input('search', '');
-        $category = $request->input('category', '');
-        $time = $request->input('time', '');
-
-        $query = Event::query()->withCount('registrations');
-
-        // Search filter
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('location', 'like', "%{$search}%");
-            });
-        }
-
-        // Category filter
-        if ($category) {
-            $query->where('category', $category);
-        }
-
-        // Time filter
-        if ($time) {
-            $now = now();
-
-            if ($time === 'upcoming') {
-                $query->where('start_time', '>', $now);
-            } elseif ($time === 'ongoing') {
-                $query->where('start_time', '<=', $now)
-                      ->where(function ($q) use ($now) {
-                          $q->whereNull('end_time')
-                            ->orWhere('end_time', '>=', $now);
-                      });
-            } elseif ($time === 'past') {
-                $query->where(function ($q) use ($now) {
-                    $q->whereNotNull('end_time')->where('end_time', '<', $now)
-                      ->orWhere(function ($q2) use ($now) {
-                          $q2->whereNull('end_time')->where('start_time', '<', $now);
-                      });
-                });
-            }
-        }
-
-        $events = $query->orderBy('start_time', 'asc')->get();
-
-        return response()->json([
-            'success' => true,
-            'events' => $events->map(function ($event) {
-                return [
-                    'id' => $event->id,
-                    'name' => $event->name,
-                    'description' => substr($event->description, 0, 100) . '...',
-                    'location' => $event->location,
-                    'category' => $event->category,
-                    'start_time' => $event->start_time->format('M d, Y h:i A'),
-                    'start_time_short' => $event->start_time->format('M d, Y'),
-                    'banner_image' => $event->banner_image ? 'storage/' . $event->banner_image : null,
-                    'registrations_count' => $event->registrations_count,
-                ];
-            }),
-            'total' => $events->count(),
-        ]);
+        return back()->with('success', 'Your registration was cancelled.');
     }
 }

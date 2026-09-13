@@ -1,78 +1,36 @@
 <x-guest-layout>
-    <div class="max-w-md mx-auto mt-10">
+    <p class="eyebrow text-center">Club coordinator</p>
+    <h1 class="headline mt-1 text-center text-2xl text-ink">Log in to your club</h1>
 
-        <div class="mb-6 text-center">
-            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
-                Coordinator Login
-            </h2>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Sign in to manage and create events
-            </p>
+    @if (session('status'))
+        <div class="mt-4 rounded-xl border-2 border-moss bg-moss/10 p-3 text-sm text-moss">{{ session('status') }}</div>
+    @endif
+
+    @if ($errors->any())
+        <div class="mt-4 rounded-xl border-2 border-red-700 bg-red-700/10 p-3 text-sm text-red-700">{{ $errors->first() }}</div>
+    @endif
+
+    <form method="POST" action="{{ route('coordinator.login') }}" class="mt-6 space-y-4">
+        @csrf
+        <div>
+            <label class="field-label">Email</label>
+            <input type="email" name="email" value="{{ old('email') }}" required autofocus class="field">
         </div>
+        <div>
+            <label class="field-label">Password</label>
+            <input type="password" name="password" required class="field">
+        </div>
+        <label class="flex items-center gap-2 text-sm text-ink-soft">
+            <input type="checkbox" name="remember" class="rounded border-ink/30 text-tangerine focus:ring-tangerine">
+            Remember me
+        </label>
+        <button type="submit" class="btn-ink w-full">Log in</button>
+    </form>
 
-        <!-- Session Status -->
-        @if (session('status'))
-            <div class="mb-4 text-green-600 font-medium">
-                {{ session('status') }}
-            </div>
-        @endif
-
-        <!-- Error Messages -->
-        @if ($errors->any())
-            <div class="mb-4 text-red-600">
-                {{ $errors->first() }}
-            </div>
-        @endif
-
-        <form method="POST" action="{{ url('/coordinator/login') }}">
-            @csrf
-
-            <!-- Email -->
-            <div>
-                <x-input-label for="email" value="Email" />
-                <x-text-input
-                    id="email"
-                    class="block mt-1 w-full"
-                    type="email"
-                    name="email"
-                    :value="old('email')"
-                    required autofocus
-                />
-            </div>
-
-            <!-- Password -->
-            <div class="mt-4">
-                <x-input-label for="password" value="Password" />
-                <x-text-input
-                    id="password"
-                    class="block mt-1 w-full"
-                    type="password"
-                    name="password"
-                    required
-                />
-            </div>
-
-            <!-- Actions -->
-            <div class="flex items-center justify-between mt-6">
-                <a href="{{ route('login') }}"
-                   class="text-sm text-blue-600 hover:underline">
-                    Student Login
-                </a>
-
-                <x-primary-button>
-                    Login
-                </x-primary-button>
-            </div>
-        </form>
-
-        <!-- Register Link -->
-        <p class="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-            New coordinator?
-            <a href="{{ url('/coordinator/register') }}"
-               class="text-blue-600 hover:underline font-semibold">
-                Register Here
-            </a>
-        </p>
-
-    </div>
+    <p class="mt-6 text-center text-sm text-ink-soft">
+        New club? <a href="{{ route('coordinator.register') }}" class="font-semibold text-tangerine hover:underline">Register it here</a>
+    </p>
+    <p class="mt-2 text-center text-sm text-ink-soft">
+        Student instead? <a href="{{ route('login') }}" class="font-semibold text-ink hover:underline">Student login</a>
+    </p>
 </x-guest-layout>

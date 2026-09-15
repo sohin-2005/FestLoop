@@ -77,6 +77,7 @@ Route::middleware('auth:coordinator')->prefix('coordinator')->name('coordinator.
         Route::delete('/{event}', [CoordinatorEventController::class, 'destroy'])->name('destroy');
         Route::post('/{event}/recap', [CoordinatorEventController::class, 'recap'])->name('recap');
         Route::get('/{event}/registrations', [CoordinatorEventController::class, 'registrations'])->name('registrations');
+        Route::get('/{event}/registrations/export', [CoordinatorEventController::class, 'exportRegistrations'])->name('registrations.export');
         Route::patch('/{event}/registrations/{registration}', [CoordinatorEventController::class, 'updateRegistration'])->name('registrations.update');
     });
 });

@@ -1,7 +1,17 @@
 <x-coordinator-layout>
     <a href="{{ route('coordinator.events.index') }}" class="btn-quiet text-xs">← Back to events</a>
-    <p class="eyebrow mt-3">Sign-ups</p>
-    <h1 class="headline text-3xl text-ink">{{ $event->name }}</h1>
+
+    <div class="mt-3 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <p class="eyebrow">Sign-ups</p>
+            <h1 class="headline text-3xl text-ink">{{ $event->name }}</h1>
+        </div>
+        @if ($registrations->isNotEmpty())
+            <a href="{{ route('coordinator.events.registrations.export', $event) }}" class="btn-ghost btn-sm">
+                ↓ Download CSV
+            </a>
+        @endif
+    </div>
 
     @if ($registrations->isEmpty())
         <div class="panel-soft mt-6 py-14 text-center text-ink-soft">No one has registered yet.</div>

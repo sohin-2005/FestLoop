@@ -57,6 +57,7 @@ class Event extends Model
         'start_time'            => 'datetime',
         'end_time'              => 'datetime',
         'registration_deadline' => 'datetime',
+        'reminder_sent_at'      => 'datetime',
         'requires_approval'     => 'boolean',
     ];
 

@@ -9,7 +9,9 @@ use App\Models\Registration;
 use App\Notifications\NewClubEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EventController extends Controller
 {
@@ -136,6 +138,35 @@ class EventController extends Controller
         $registrations = $event->registrations()->with('user')->orderBy('status')->orderBy('created_at')->get();
 
         return view('coordinator.events.registrations', compact('event', 'registrations'));
+    }
+
+    /** Download the sign-up list as a CSV (for attendance sheets, certificates, etc). */
+    public function exportRegistrations(Event $event): StreamedResponse
+    {
+        $this->authorizeEvent($event);
+
+        $registrations = $event->registrations()->with('user')->orderBy('status')->orderBy('created_at')->get();
+        $filename = Str::slug($event->name).'-registrations-'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($registrations) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, ['Name', 'Email', 'Department', 'Year', 'Roll number', 'Status', 'Registered at']);
+
+            foreach ($registrations as $registration) {
+                fputcsv($handle, [
+                    $registration->user?->name,
+                    $registration->user?->email,
+                    $registration->user?->department,
+                    $registration->user?->year_of_study,
+                    $registration->user?->roll_number,
+                    $registration->status,
+                    $registration->created_at->format('Y-m-d H:i'),
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     public function updateRegistration(Request $request, Event $event, Registration $registration)

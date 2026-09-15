@@ -20,12 +20,14 @@ Built with Laravel 12, Blade, Tailwind CSS, and Alpine.js.
 - One-click registration, with automatic **waitlisting** when an event is full and
   automatic promotion + notification when a spot opens up
 - Follow clubs to get a personalized "For You" feed and email/in-app notifications
+- Automatic reminders ~24h before an event you're registered for
 - A personal dashboard of upcoming registrations and followed clubs
 
 **For clubs (coordinators)**
 - Self-serve club registration (goes live after a quick admin approval)
 - A club panel to manage events, registrations (approve/waitlist/reject), achievements,
   roadmap items, and announcements
+- Export any event's sign-up list to CSV for attendance sheets or certificates
 - Optional external registration links (e.g. a Google Form) instead of using FestLoop's
   built-in registration
 - Post-event recaps that show up on the public club page
@@ -41,6 +43,7 @@ cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite   # uses sqlite by default
 php artisan migrate --seed
+php artisan storage:link         # so uploaded logos/banners are servable
 npm install && npm run build
 php artisan serve
 ```
@@ -49,6 +52,29 @@ Seeded logins (password: `password` for all):
 - Student: `test@example.com`
 - Admin: `admin@festloop.test`
 - Club coordinator: `bfc@festloop.test` (ByteForge Coding Club)
+
+## Scheduled tasks
+
+Attendees get a reminder (in-app + email) roughly 24h before an event starts.
+That runs on Laravel's scheduler, so in production point cron at:
+
+```
+* * * * * cd /path/to/festloop && php artisan schedule:run >> /dev/null 2>&1
+```
+
+To fire it by hand:
+
+```bash
+php artisan events:send-reminders          # default: events within the next 24h
+php artisan events:send-reminders --hours=48
+```
+
+## Email
+
+`MAIL_MAILER=log` by default, so mail is written to `storage/logs/laravel.log`
+instead of being sent — handy in development. For real delivery, set
+`MAIL_MAILER=smtp` in `.env` and fill in the `MAIL_HOST` / `MAIL_USERNAME` /
+`MAIL_PASSWORD` credentials from your provider.
 
 ## Tests
 

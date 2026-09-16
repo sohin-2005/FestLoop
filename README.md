@@ -48,10 +48,20 @@ npm install && npm run build
 php artisan serve
 ```
 
+The default seed loads the 22 real student clubs of Govt. Model Engineering College
+(from mec.ac.in/students/clubs and each club's own site). Each gets a placeholder
+coordinator login, meant to be handed over to the club.
+
 Seeded logins (password: `password` for all):
 - Student: `test@example.com`
 - Admin: `admin@festloop.test`
-- Club coordinator: `bfc@festloop.test` (ByteForge Coding Club)
+- Club coordinator: `<short name>@festloop.test`, e.g. `iedc@festloop.test`, `foss@festloop.test`, `ilu@festloop.test` (Illuminati)
+
+Want fictional clubs and a busy event calendar for demos instead?
+
+```bash
+php artisan db:seed --class=DemoSeeder
+```
 
 ## Scheduled tasks
 

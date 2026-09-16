@@ -19,7 +19,7 @@
                         One loop.
                     </h1>
                     <p class="mt-6 max-w-lg text-lg text-ink-soft">
-                        Stop checking six different club pages. FestLoop is where every society on campus posts what's happening next — and what they've already pulled off.
+                        Stop checking {{ \App\Models\Club::approved()->count() }} different club pages. FestLoop is where every society on campus posts what's happening next, and what they've already pulled off.
                     </p>
                     <div class="mt-8 flex flex-wrap items-center gap-3">
                         <a href="#browse" class="btn-ink">Browse events <span aria-hidden="true">↓</span></a>

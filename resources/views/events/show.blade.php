@@ -4,7 +4,9 @@
         @if ($event->banner_url)
             <img src="{{ $event->banner_url }}" class="h-full w-full object-cover" alt="{{ $event->name }}">
         @endif
-        <div class="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent"></div>
+        {{-- Club posters are often light/cream, so the scrim has to stay strong
+             enough for the white title to read over them. --}}
+        <div class="absolute inset-0 bg-gradient-to-t from-ink/95 via-ink/65 to-ink/25"></div>
 
         <div class="absolute inset-x-0 bottom-0 mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
             <a href="{{ route('events.index') }}" class="inline-flex items-center gap-1 rounded-full border-2 border-cream bg-ink/40 px-3 py-1 text-xs font-semibold text-cream backdrop-blur hover:bg-ink/60">← All events</a>

@@ -63,6 +63,13 @@ class MecClubsSeeder extends Seeder
             }
 
             foreach ($extras['events'] as $e) {
+                $banner = $e['banner'] ?? null;
+                unset($e['banner']);
+
+                if ($banner && $stored = $this->storeEventBanner($banner)) {
+                    $e['banner_image'] = $stored;
+                }
+
                 Event::updateOrCreate(
                     ['club_id' => $club->id, 'name' => $e['name']],
                     $e + ['coordinator_id' => $coordinator->id]
@@ -98,6 +105,25 @@ class MecClubsSeeder extends Seeder
         }
 
         $path = 'club-logos/'.$file;
+        Storage::disk('public')->put($path, file_get_contents($source));
+
+        return $path;
+    }
+
+    /**
+     * Event posters published by the organising club, shipped with the repo.
+     * Only designed posters are used here — no event photographs, which show
+     * identifiable attendees.
+     */
+    private function storeEventBanner(string $file): ?string
+    {
+        $source = database_path('seeders/assets/event-banners/'.$file);
+
+        if (! is_file($source)) {
+            return null;
+        }
+
+        $path = 'event-banners/'.$file;
         Storage::disk('public')->put($path, file_get_contents($source));
 
         return $path;
@@ -164,6 +190,7 @@ class MecClubsSeeder extends Seeder
                         'category' => 'talk', 'mode' => 'offline', 'location' => 'Govt. Model Engineering College',
                         'start_time' => Carbon::parse('2026-09-15 10:00'), 'end_time' => Carbon::parse('2026-09-15 12:00'),
                         'external_registration_url' => 'https://mixedsignals.mec.ac.in',
+                        'banner' => 'astronix.jpg',
                     ],
                 ],
             ],
@@ -217,6 +244,7 @@ class MecClubsSeeder extends Seeder
                         'category' => 'competition', 'mode' => 'offline', 'location' => 'Bhavans Hall, TD Road, Kochi',
                         'start_time' => Carbon::parse('2026-10-02 09:30'),
                         'external_registration_url' => 'https://illuminati.mec.ac.in',
+                        'banner' => 'tiq.png',
                     ],
                 ],
             ],

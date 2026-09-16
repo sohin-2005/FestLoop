@@ -48,10 +48,20 @@ export default {
                     '0%, 100%': { opacity: 1 },
                     '50%': { opacity: 0.25 },
                 },
+                'marquee-reverse': {
+                    '0%': { transform: 'translateX(-50%)' },
+                    '100%': { transform: 'translateX(0)' },
+                },
+                float: {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-8px)' },
+                },
             },
             animation: {
                 marquee: 'marquee 40s linear infinite',
+                'marquee-reverse': 'marquee-reverse 46s linear infinite',
                 blink: 'blink 1.4s ease-in-out infinite',
+                float: 'float 5s ease-in-out infinite',
             },
         },
     },

@@ -21,7 +21,7 @@
     <nav x-data="{ mobileOpen: false }" class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 items-center justify-between">
             <div class="flex items-center gap-8">
-                <a href="{{ route('events.index') }}" class="flex items-center gap-2">
+                <a href="{{ route('home') }}" class="flex items-center gap-2">
                     <span class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-tangerine font-display text-lg text-ink shadow-hard-sm">FL</span>
                     <span class="font-display text-xl tracking-wide text-ink">FestLoop</span>
                 </a>

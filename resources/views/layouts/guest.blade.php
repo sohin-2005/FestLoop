@@ -17,7 +17,7 @@
             {{-- background confetti dots --}}
             <div class="pointer-events-none absolute inset-0 opacity-30" style="background-image: radial-gradient(#F2762E 1.5px, transparent 1.5px), radial-gradient(#2E8FD6 1.5px, transparent 1.5px); background-size: 42px 42px; background-position: 0 0, 21px 21px;"></div>
 
-            <a href="{{ route('events.index') }}" class="relative z-10 mb-6 flex items-center gap-2">
+            <a href="{{ route('home') }}" class="relative z-10 mb-6 flex items-center gap-2">
                 <span class="flex h-11 w-11 items-center justify-center rounded-full border-2 border-cream bg-tangerine font-display text-xl text-ink shadow-hard-sm">FL</span>
                 <span class="font-display text-2xl tracking-wide text-cream">FestLoop</span>
             </a>

@@ -25,7 +25,7 @@ test('events index only shows events from approved clubs', function () {
     $pendingClub = Club::factory()->create(['status' => 'pending']);
     Event::factory()->create(['club_id' => $pendingClub->id, 'name' => 'Hidden Event', 'start_time' => now()->addDay()]);
 
-    $response = $this->get('/');
+    $response = $this->get('/events');
 
     $response->assertOk();
     $response->assertSee('Visible Event');

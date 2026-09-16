@@ -6,6 +6,7 @@ use App\Http\Controllers\Coordinator\ClubProfileController;
 use App\Http\Controllers\Coordinator\EventController as CoordinatorEventController;
 use App\Http\Controllers\CoordinatorAuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Club;
@@ -18,7 +19,8 @@ use Illuminate\Support\Facades\Route;
 | Public Routes — the shared events & club directory
 |--------------------------------------------------------------------------
 */
-Route::get('/', [EventController::class, 'index'])->name('events.index');
+Route::get('/', HomeController::class)->name('home');
+Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/search', [EventController::class, 'searchEvents'])->name('events.search');
 Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
 

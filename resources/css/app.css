@@ -147,4 +147,37 @@
     .scrollbar-none::-webkit-scrollbar {
         display: none;
     }
+
+    /* Scroll-reveal. JS adds .is-in; --d staggers siblings.
+       Elements start hidden, so the no-JS fallback in home.blade.php
+       adds .is-in immediately rather than leaving the page blank. */
+    .reveal {
+        opacity: 0;
+        transform: translateY(14px);
+        transition:
+            opacity 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
+            transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+        transition-delay: var(--d, 0s);
+    }
+
+    .reveal.is-in {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Motion is decoration here — never let it fight the reader. */
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .animate-marquee,
+    .animate-marquee-reverse,
+    .animate-float,
+    .animate-blink {
+        animation: none !important;
+    }
 }
